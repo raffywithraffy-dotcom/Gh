@@ -1,0 +1,62 @@
+-- I Wanna Run Away + Twerk Button Script
+-- Paste this in your executor
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+-- Change these Animation IDs if you want different ones
+local RUN_AWAY_ID = "rbxassetid://10471660001"  -- Panic run away style
+local TWERK_ID = "rbxassetid://5918726674"      -- Popular twerk animation
+
+local runAwayAnim = Instance.new("Animation")
+runAwayAnim.AnimationId = RUN_AWAY_ID
+
+local twerkAnim = Instance.new("Animation")
+twerkAnim.AnimationId = TWERK_ID
+
+local runTrack = humanoid:LoadAnimation(runAwayAnim)
+local twerkTrack = humanoid:LoadAnimation(twerkAnim)
+
+runTrack.Priority = Enum.AnimationPriority.Action4
+twerkTrack.Priority = Enum.AnimationPriority.Action4
+
+-- Create the buttons on screen
+local screen = Instance.new("ScreenGui")
+screen.Parent = player:WaitForChild("PlayerGui")
+
+local runBtn = Instance.new("TextButton")
+runBtn.Size = UDim2.new(0, 160, 0, 50)
+runBtn.Position = UDim2.new(0, 20, 0, 20)
+runBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+runBtn.Text = "🏃 I WANNA RUN AWAY"
+runBtn.TextColor3 = Color3.new(1,1,1)
+runBtn.TextScaled = true
+runBtn.Parent = screen
+
+local twerkBtn = Instance.new("TextButton")
+twerkBtn.Size = UDim2.new(0, 160, 0, 50)
+twerkBtn.Position = UDim2.new(0, 20, 0, 90)
+twerkBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 200)
+twerkBtn.Text = "🍑 TWERK"
+twerkBtn.TextColor3 = Color3.new(1,1,1)
+twerkBtn.TextScaled = true
+twerkBtn.Parent = screen
+
+-- Button functions
+runBtn.MouseButton1Click:Connect(function()
+    twerkTrack:Stop()
+    runTrack:Play()
+    task.wait(6)
+    runTrack:Stop()
+end)
+
+twerkBtn.MouseButton1Click:Connect(function()
+    runTrack:Stop()
+    twerkTrack:Play()
+    task.wait(10)
+    twerkTrack:Stop()
+end)
+
+print("✅ Run Away + Twerk buttons loaded!")
