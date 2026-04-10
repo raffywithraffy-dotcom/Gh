@@ -1,0 +1,257 @@
+-- Combined Touch Fling + Anti Fling + Godmode + Super Ring GUI
+-- Made for Roblox (FE compatible where possible)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Variables
+local touchFlingEnabled = false
+local antiFlingEnabled = false
+local godmodeEnabled = false
+local superRingEnabled = false
+local ringRadius = 20
+local ringParts = {}
+
+-- Create GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FlingGodRingGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- Make draggable
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 50)
+title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+title.Text = "Touch Fling + Godmode + Ring GUI"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = mainFrame
+
+-- Touch Fling Toggle
+local btnTouch = Instance.new("TextButton")
+btnTouch.Size = UDim2.new(0.9, 0, 0, 40)
+btnTouch.Position = UDim2.new(0.05, 0, 0, 60)
+btnTouch.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+btnTouch.Text = "Touch Fling: OFF"
+btnTouch.TextColor3 = Color3.new(1,1,1)
+btnTouch.Font = Enum.Font.SourceSansBold
+btnTouch.TextSize = 16
+btnTouch.Parent = mainFrame
+
+btnTouch.MouseButton1Click:Connect(function()
+    touchFlingEnabled = not touchFlingEnabled
+    btnTouch.Text = "Touch Fling: " .. (touchFlingEnabled and "ON" or "OFF")
+    btnTouch.BackgroundColor3 = touchFlingEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+end)
+
+-- Touch Fling Logic
+character.Touched:Connect(function(part)
+    if not touchFlingEnabled then return end
+    local otherChar = part.Parent
+    if otherChar and otherChar:FindFirstChild("Humanoid") and otherChar \~= character then
+        local otherHrp = otherChar:FindFirstChild("HumanoidRootPart")
+        if otherHrp then
+            otherHrp.Velocity = hrp.CFrame.LookVector * 500 + Vector3.new(0, 100, 0) -- Strong fling upward/forward
+        end
+    end
+end)
+
+-- Anti Fling Toggle
+local btnAnti = Instance.new("TextButton")
+btnAnti.Size = UDim2.new(0.9, 0, 0, 40)
+btnAnti.Position = UDim2.new(0.05, 0, 0, 110)
+btnAnti.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+btnAnti.Text = "Anti Fling: OFF"
+btnAnti.TextColor3 = Color3.new(1,1,1)
+btnAnti.Font = Enum.Font.SourceSansBold
+btnAnti.TextSize = 16
+btnAnti.Parent = mainFrame
+
+btnAnti.MouseButton1Click:Connect(function()
+    antiFlingEnabled = not antiFlingEnabled
+    btnAnti.Text = "Anti Fling: " .. (antiFlingEnabled and "ON" or "OFF")
+    btnAnti.BackgroundColor3 = antiFlingEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+end)
+
+-- Anti Fling Loop
+RunService.Heartbeat:Connect(function()
+    if antiFlingEnabled and hrp then
+        -- Limit crazy velocities/rotations
+        if hrp.Velocity.Magnitude > 200 then
+            hrp.Velocity = hrp.Velocity.Unit * 150
+        end
+        if hrp.RotVelocity.Magnitude > 50 then
+            hrp.RotVelocity = Vector3.new(0,0,0)
+        end
+    end
+end)
+
+-- Godmode Toggle
+local btnGod = Instance.new("TextButton")
+btnGod.Size = UDim2.new(0.9, 0, 0, 40)
+btnGod.Position = UDim2.new(0.05, 0, 0, 160)
+btnGod.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+btnGod.Text = "Godmode: OFF"
+btnGod.TextColor3 = Color3.new(1,1,1)
+btnGod.Font = Enum.Font.SourceSansBold
+btnGod.TextSize = 16
+btnGod.Parent = mainFrame
+
+btnGod.MouseButton1Click:Connect(function()
+    godmodeEnabled = not godmodeEnabled
+    btnGod.Text = "Godmode: " .. (godmodeEnabled and "ON" or "OFF")
+    btnGod.BackgroundColor3 = godmodeEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+end)
+
+-- Godmode Loop
+RunService.Heartbeat:Connect(function()
+    if godmodeEnabled and humanoid then
+        humanoid.Health = humanoid.MaxHealth
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+    end
+end)
+
+-- Super Ring Toggle + Radius Slider (simple TextBox)
+local btnRing = Instance.new("TextButton")
+btnRing.Size = UDim2.new(0.9, 0, 0, 40)
+btnRing.Position = UDim2.new(0.05, 0, 0, 210)
+btnRing.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+btnRing.Text = "Super Ring: OFF"
+btnRing.TextColor3 = Color3.new(1,1,1)
+btnRing.Font = Enum.Font.SourceSansBold
+btnRing.TextSize = 16
+btnRing.Parent = mainFrame
+
+local radiusLabel = Instance.new("TextLabel")
+radiusLabel.Size = UDim2.new(0.4, 0, 0, 30)
+radiusLabel.Position = UDim2.new(0.05, 0, 0, 260)
+radiusLabel.BackgroundTransparency = 1
+radiusLabel.Text = "Radius:"
+radiusLabel.TextColor3 = Color3.new(1,1,1)
+radiusLabel.Font = Enum.Font.SourceSans
+radiusLabel.TextSize = 16
+radiusLabel.Parent = mainFrame
+
+local radiusBox = Instance.new("TextBox")
+radiusBox.Size = UDim2.new(0.5, 0, 0, 30)
+radiusBox.Position = UDim2.new(0.45, 0, 0, 260)
+radiusBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
+radiusBox.Text = tostring(ringRadius)
+radiusBox.TextColor3 = Color3.new(1,1,1)
+radiusBox.Font = Enum.Font.SourceSans
+radiusBox.TextSize = 16
+radiusBox.Parent = mainFrame
+
+radiusBox.FocusLost:Connect(function()
+    local num = tonumber(radiusBox.Text)
+    if num then ringRadius = math.clamp(num, 5, 100) end
+    radiusBox.Text = tostring(ringRadius)
+end)
+
+btnRing.MouseButton1Click:Connect(function()
+    superRingEnabled = not superRingEnabled
+    btnRing.Text = "Super Ring: " .. (superRingEnabled and "ON" or "OFF")
+    btnRing.BackgroundColor3 = superRingEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    
+    if not superRingEnabled then
+        for _, p in ipairs(ringParts) do p:Destroy() end
+        ringParts = {}
+    end
+end)
+
+-- Super Ring Loop
+RunService.Heartbeat:Connect(function()
+    if not superRingEnabled or not hrp then return end
+    
+    -- Clear old parts if needed
+    if #ringParts == 0 then
+        for i = 1, 36 do
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(4, 4, 4)
+            part.Shape = Enum.PartType.Ball
+            part.Anchored = true
+            part.CanCollide = false
+            part.Transparency = 0.7
+            part.Color = Color3.fromRGB(255, 0, 100)
+            part.Parent = workspace
+            table.insert(ringParts, part)
+        end
+    end
+    
+    local angleStep = (math.pi * 2) / #ringParts
+    for i, part in ipairs(ringParts) do
+        local angle = (tick() * 5) + (i * angleStep)  -- spinning effect
+        local offset = Vector3.new(math.cos(angle) * ringRadius, 5, math.sin(angle) * ringRadius)
+        part.CFrame = hrp.CFrame * CFrame.new(offset)
+        
+        -- Fling anything touching the ring
+        for _, obj in ipairs(workspace:GetPartBoundsInRadius(part.Position, 6)) do
+            if obj \~= part and obj \~= hrp and obj.CanCollide then
+                local vel = (obj.Position - hrp.Position).Unit * 300 + Vector3.new(0, 150, 0)
+                if obj:FindFirstChild("HumanoidRootPart") then
+                    obj.HumanoidRootPart.Velocity = vel
+                elseif obj.Velocity then
+                    obj.Velocity = vel
+                end
+            end
+        end
+    end
+end)
+
+-- Close button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 20
+closeBtn.Parent = mainFrame
+
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+print("Fling + Godmode + Super Ring GUI loaded! Drag the window to move it.")
