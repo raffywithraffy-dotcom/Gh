@@ -1,0 +1,165 @@
+-- Grok's Universal Fly Script (Made by Grok / xAI) - 2026
+-- Works in most games, with GUI toggle button
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+local flying = false
+local flySpeed = 50
+local velocity = Instance.new("BodyVelocity")
+velocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+velocity.Velocity = Vector3.new(0, 0, 0)
+
+local gyro = Instance.new("BodyGyro")
+gyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+gyro.P = 1250
+
+-- Create GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GrokFlyGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 180, 0, 140)
+mainFrame.Position = UDim2.new(0, 20, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+title.Text = "Grok Fly Script"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.Parent = mainFrame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.9, 0, 0, 40)
+toggleButton.Position = UDim2.new(0.05, 0, 0, 40)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+toggleButton.Text = "FLY: OFF"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 16
+toggleButton.Parent = mainFrame
+
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(0.9, 0, 0, 20)
+speedLabel.Position = UDim2.new(0.05, 0, 0, 90)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "Speed: " .. flySpeed
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextSize = 14
+speedLabel.Parent = mainFrame
+
+local speedUp = Instance.new("TextButton")
+speedUp.Size = UDim2.new(0.4, 0, 0, 25)
+speedUp.Position = UDim2.new(0.05, 0, 0, 110)
+speedUp.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+speedUp.Text = "+ Speed"
+speedUp.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedUp.Font = Enum.Font.Gotham
+speedUp.TextSize = 12
+speedUp.Parent = mainFrame
+
+local speedDown = Instance.new("TextButton")
+speedDown.Size = UDim2.new(0.4, 0, 0, 25)
+speedDown.Position = UDim2.new(0.55, 0, 0, 110)
+speedDown.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+speedDown.Text = "- Speed"
+speedDown.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedDown.Font = Enum.Font.Gotham
+speedDown.TextSize = 12
+speedDown.Parent = mainFrame
+
+-- Flying Logic
+local moveDirection = Vector3.new(0, 0, 0)
+local connection
+
+local function startFlying()
+    if flying then return end
+    flying = true
+    toggleButton.Text = "FLY: ON"
+    toggleButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    
+    humanoid.PlatformStand = true
+    velocity.Parent = rootPart
+    gyro.Parent = rootPart
+    gyro.CFrame = rootPart.CFrame
+    
+    connection = RunService.Heartbeat:Connect(function()
+        if not flying then return end
+        
+        local cam = workspace.CurrentCamera
+        local moveVec = Vector3.new(0, 0, 0)
+        
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + cam.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - cam.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - cam.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + cam.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveVec = moveVec - Vector3.new(0, 1, 0) end
+        
+        moveVec = moveVec.Unit * flySpeed
+        velocity.Velocity = moveVec
+        gyro.CFrame = cam.CFrame
+    end)
+end
+
+local function stopFlying()
+    if not flying then return end
+    flying = false
+    toggleButton.Text = "FLY: OFF"
+    toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    
+    if connection then connection:Disconnect() end
+    velocity.Parent = nil
+    gyro.Parent = nil
+    humanoid.PlatformStand = false
+    velocity.Velocity = Vector3.new(0, 0, 0)
+end
+
+-- Button Connections
+toggleButton.MouseButton1Click:Connect(function()
+    if flying then
+        stopFlying()
+    else
+        startFlying()
+    end
+end)
+
+speedUp.MouseButton1Click:Connect(function()
+    flySpeed = flySpeed + 10
+    speedLabel.Text = "Speed: " .. flySpeed
+end)
+
+speedDown.MouseButton1Click:Connect(function()
+    flySpeed = math.max(10, flySpeed - 10)
+    speedLabel.Text = "Speed: " .. flySpeed
+end)
+
+-- Auto re-attach on character respawn
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    humanoid = newChar:WaitForChild("Humanoid")
+    rootPart = newChar:WaitForChild("HumanoidRootPart")
+    if flying then
+        stopFlying()
+        wait(0.5)
+        startFlying()
+    end
+end)
+
+print("Grok's Fly Script loaded! Use the GUI to toggle flying.")
