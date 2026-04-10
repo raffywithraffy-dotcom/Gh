@@ -1,0 +1,113 @@
+-- Blade Ball Auto Parry with Draggable Button | Delta Executor 2026
+-- Simple, lightweight, and mobile-friendly
+
+print("🚀 Blade Ball Auto Parry + Draggable Button Loaded!")
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local autoParryEnabled = true
+local parryDistance = 28  -- Adjust this (20-40 range works best)
+local parryRemote = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("ParryButtonPress")
+
+-- Create Draggable GUI Button
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local Button = Instance.new("TextButton")
+Button.Size = UDim2.new(0, 80, 0, 80)
+Button.Position = UDim2.new(0.85, 0, 0.4, 0)
+Button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+Button.Text = "Parry\nON"
+Button.TextColor3 = Color3.new(1, 1, 1)
+Button.TextScaled = true
+Button.Font = Enum.Font.GothamBold
+Button.BorderSizePixel = 0
+Button.Parent = ScreenGui
+
+-- Make button round
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0.5, 0)
+UICorner.Parent = Button
+
+-- Draggable functionality
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+Button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Button.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        Button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Toggle on button click
+Button.MouseButton1Click:Connect(function()
+    autoParryEnabled = not autoParryEnabled
+    if autoParryEnabled then
+        Button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        Button.Text = "Parry\nON"
+    else
+        Button.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        Button.Text = "Parry\nOFF"
+    end
+    print("Auto Parry: " .. (autoParryEnabled and "ON" or "OFF"))
+end)
+
+-- Main Auto Parry Logic
+RunService.Heartbeat:Connect(function()
+    if not autoParryEnabled then return end
+    
+    local character = LocalPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local root = character.HumanoidRootPart
+    
+    -- Find the ball
+    for _, ball in ipairs(Workspace:GetChildren()) do
+        if (ball.Name == "Ball" or string.find(ball.Name:lower(), "ball")) and ball:IsA("BasePart") then
+            local distance = (ball.Position - root.Position).Magnitude
+            local velocity = ball.Velocity.Magnitude
+            
+            if distance < parryDistance and velocity > 8 then
+                -- Try remote first (most reliable)
+                if parryRemote then
+                    parryRemote:FireServer()
+                else
+                    -- Fallback: Virtual key press (F is common for parry)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+                    task.wait(0.03)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.F, false, game)
+                end
+                
+                -- Small cooldown to prevent spam detection
+                task.wait(0.08)
+                break
+            end
+        end
+    end
+end)
+
+print("✅ Draggable Auto Parry button created! Drag it anywhere.")
+print("Tip: Click the button to toggle. Increase parryDistance if timing is late.")
