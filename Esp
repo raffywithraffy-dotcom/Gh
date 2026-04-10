@@ -1,0 +1,21 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+
+-- Loop through all players
+RunService.Heartbeat:Connect(function()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            local distance = (localPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+
+            -- Add highlight if within 50 studs
+            local highlight = player.Character:FindFirstChildOfClass("Highlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Parent = player.Character
+            end
+            highlight.Enabled = distance < 50
+        end
+    end
+end)
