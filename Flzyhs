@@ -1,0 +1,234 @@
+-- Raffy Executor GUI (PC + Mobile Friendly)
+-- Paste this entire script into your executor
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RaffyExecutor"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 420, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- Corner radius
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = mainFrame
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -100, 1, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "🦊 Raffy Executor"
+titleLabel.TextColor3 = Color3.fromRGB(255, 100, 150)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Parent = titleBar
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.TextScaled = true
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeBtn
+
+-- Script Box
+local scriptBox = Instance.new("TextBox")
+scriptBox.Size = UDim2.new(1, -20, 0, 180)
+scriptBox.Position = UDim2.new(0, 10, 0, 50)
+scriptBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+scriptBox.Text = "-- Paste your script here\n-- Example: loadstring(game:HttpGet('...'))()"
+scriptBox.TextColor3 = Color3.new(1,1,1)
+scriptBox.TextWrapped = true
+scriptBox.TextXAlignment = Enum.TextXAlignment.Left
+scriptBox.TextYAlignment = Enum.TextYAlignment.Top
+scriptBox.ClearTextOnFocus = false
+scriptBox.MultiLine = true
+scriptBox.Font = Enum.Font.Code
+scriptBox.TextSize = 14
+scriptBox.Parent = mainFrame
+
+local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 8)
+boxCorner.Parent = scriptBox
+
+-- Buttons Frame
+local buttonsFrame = Instance.new("Frame")
+buttonsFrame.Size = UDim2.new(1, -20, 0, 50)
+buttonsFrame.Position = UDim2.new(0, 10, 1, -60)
+buttonsFrame.BackgroundTransparency = 1
+buttonsFrame.Parent = mainFrame
+
+-- Execute Button
+local executeBtn = Instance.new("TextButton")
+executeBtn.Size = UDim2.new(0.48, 0, 1, 0)
+executeBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 100)
+executeBtn.Text = "EXECUTE"
+executeBtn.TextColor3 = Color3.new(1,1,1)
+executeBtn.TextScaled = true
+executeBtn.Font = Enum.Font.GothamBold
+executeBtn.Parent = buttonsFrame
+
+local execCorner = Instance.new("UICorner")
+execCorner.CornerRadius = UDim.new(0, 8)
+execCorner.Parent = executeBtn
+
+-- Clear Button
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(0.48, 0, 1, 0)
+clearBtn.Position = UDim2.new(0.52, 0, 0, 0)
+clearBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+clearBtn.Text = "CLEAR"
+clearBtn.TextColor3 = Color3.new(1,1,1)
+clearBtn.TextScaled = true
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.Parent = buttonsFrame
+
+local clearCorner = Instance.new("UICorner")
+clearCorner.CornerRadius = UDim.new(0, 8)
+clearCorner.Parent = clearBtn
+
+-- Fly Button (bonus)
+local flyBtn = Instance.new("TextButton")
+flyBtn.Size = UDim2.new(0.48, 0, 0, 35)
+flyBtn.Position = UDim2.new(0, 10, 0, 245)
+flyBtn.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+flyBtn.Text = "🕊️ Simple Fly"
+flyBtn.TextColor3 = Color3.new(1,1,1)
+flyBtn.TextScaled = true
+flyBtn.Font = Enum.Font.GothamBold
+flyBtn.Parent = mainFrame
+
+local flyCorner = Instance.new("UICorner")
+flyCorner.CornerRadius = UDim.new(0, 8)
+flyCorner.Parent = flyBtn
+
+-- Make draggable (PC + Mobile)
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateInput(input)
+    end
+end)
+
+-- Button Functions
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+executeBtn.MouseButton1Click:Connect(function()
+    local code = scriptBox.Text
+    if code and code \~= "" then
+        local success, err = pcall(function()
+            loadstring(code)()
+        end)
+        if not success then
+            warn("Raffy Executor Error: " .. err)
+        end
+    end
+end)
+
+clearBtn.MouseButton1Click:Connect(function()
+    scriptBox.Text = ""
+end)
+
+-- Simple Fly Script
+local flying = false
+local flySpeed = 50
+local bodyVelocity
+
+flyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    
+    if flying then
+        flyBtn.Text = "🕊️ Stop Fly"
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        local root = character:WaitForChild("HumanoidRootPart")
+        
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        bodyVelocity.Parent = root
+        
+        game:GetService("RunService").Heartbeat:Connect(function()
+            if not flying then return end
+            local cam = workspace.CurrentCamera
+            local moveDirection = Vector3.new()
+            
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0,1,0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDirection = moveDirection - Vector3.new(0,1,0) end
+            
+            bodyVelocity.Velocity = moveDirection.Unit * flySpeed
+        end)
+    else
+        flyBtn.Text = "🕊️ Simple Fly"
+        if bodyVelocity then bodyVelocity:Destroy() end
+    end
+end)
+
+print("✅ Raffy Executor loaded! Drag the title bar to move.")
