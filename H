@@ -1,0 +1,135 @@
+-- Roblox Universal ESP with GUI (Rayfield) - 2026
+-- Works on Solara and most executors
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Universal ESP",
+    LoadingTitle = "ESP GUI",
+    LoadingSubtitle = "by Grok",
+    ConfigurationSaving = {
+        Enabled = false,
+    },
+})
+
+local ESPTab = Window:CreateTab("ESP", 4483362458) -- icon id optional
+
+local ESP_ENABLED = false
+local ESP_OBJECTS = {}
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local function createESP(player)
+    if player == LocalPlayer then return end
+
+    local function apply(character)
+        if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+        -- Highlight Box
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = character
+        highlight.FillTransparency = 0.65
+        highlight.OutlineTransparency = 0
+        highlight.Parent = character
+
+        -- Nametag
+        local billboard = Instance.new("BillboardGui")
+        billboard.Adornee = character:FindFirstChild("Head")
+        billboard.AlwaysOnTop = true
+        billboard.Size = UDim2.new(0, 250, 0, 60)
+        billboard.StudsOffset = Vector3.new(0, 3.5, 0)
+        billboard.Parent = character
+
+        local text = Instance.new("TextLabel")
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.BackgroundTransparency = 1
+        text.TextScaled = true
+        text.Font = Enum.Font.GothamBold
+        text.TextStrokeTransparency = 0.4
+        text.Parent = billboard
+
+        ESP_OBJECTS[player] = {Highlight = highlight, Billboard = billboard, Text = text}
+
+        -- Updater
+        RunService.RenderStepped:Connect(function()
+            if not ESP_ENABLED or not character:FindFirstChild("Humanoid") then return end
+
+            local hum = character.Humanoid
+            local root = character:FindFirstChild("HumanoidRootPart")
+            local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+            local distance = myRoot and root and (root.Position - myRoot.Position).Magnitude or 0
+
+            local isTeam = player.Team == LocalPlayer.Team and player.Team \~= nil
+            local color = isTeam and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(255, 50, 50)
+
+            highlight.FillColor = color
+            highlight.OutlineColor = color
+
+            text.Text = string.format("%s\n%.0f%%  |  %.0f studs", player.Name, (hum.Health / hum.MaxHealth) * 100, distance)
+            text.TextColor3 = color
+        end)
+    end
+
+    if player.Character then apply(player.Character) end
+    player.CharacterAdded:Connect(apply)
+end
+
+-- Initialize existing players
+for _, plr in ipairs(Players:GetPlayers()) do
+    createESP(plr)
+end
+Players.PlayerAdded:Connect(createESP)
+
+-- GUI Toggle
+local Toggle = ESPTab:CreateToggle({
+    Name = "Enable ESP",
+    CurrentValue = false,
+    Flag = "ESP_Toggle",
+    Callback = function(Value)
+        ESP_ENABLED = Value
+        for _, obj in pairs(ESP_OBJECTS) do
+            if obj.Highlight then obj.Highlight.Enabled = Value end
+            if obj.Billboard then obj.Billboard.Enabled = Value end
+        end
+        Rayfield:Notify({
+            Title = "ESP",
+            Content = Value and "Enabled!" or "Disabled.",
+            Duration = 2,
+        })
+    end,
+})
+
+-- Extra options
+ESPTab:CreateSlider({
+    Name = "Fill Transparency",
+    Range = {0, 1},
+    Increment = 0.05,
+    CurrentValue = 0.65,
+    Flag = "Trans",
+    Callback = function(Value)
+        for _, obj in pairs(ESP_OBJECTS) do
+            if obj.Highlight then obj.Highlight.FillTransparency = Value end
+        end
+    end,
+})
+
+ESPTab:CreateButton({
+    Name = "Destroy ESP (Clean up)",
+    Callback = function()
+        ESP_ENABLED = false
+        for _, obj in pairs(ESP_OBJECTS) do
+            if obj.Highlight then obj.Highlight:Destroy() end
+            if obj.Billboard then obj.Billboard:Destroy() end
+        end
+        ESP_OBJECTS = {}
+        Rayfield:Notify({Title = "ESP", Content = "Cleaned up!", Duration = 3})
+    end,
+})
+
+print("✅ ESP GUI loaded! Open the Rayfield menu (usually Right Ctrl or F4)")
+
+-- Optional: Auto open menu on load (uncomment if wanted)
+-- Rayfield:LoadConfiguration() or whatever your version uses
